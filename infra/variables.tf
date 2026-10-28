@@ -13,7 +13,7 @@ variable "project_name" {
 variable "chat_model_id" {
   description = "Bedrock model (or inference profile) that writes the answer"
   type        = string
-  default     = "apac.amazon.nova-lite-v1:0"
+  default     = "apac.amazon.nova-micro-v1:0"
 }
 
 variable "embed_model_id" {
