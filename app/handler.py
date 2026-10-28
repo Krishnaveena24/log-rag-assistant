@@ -16,7 +16,7 @@ bedrock = boto3.client("bedrock-runtime")
 
 LOG_BUCKET = os.environ["LOG_BUCKET"]
 DEFAULT_LOG_KEY = os.environ.get("LOG_KEY", "logs/app.log")
-CHAT_MODEL_ID = os.environ.get("CHAT_MODEL_ID", "us.amazon.nova-lite-v1:0")
+CHAT_MODEL_ID = os.environ.get("CHAT_MODEL_ID", "apac.amazon.nova-lite-v1:0")
 EMBED_MODEL_ID = os.environ.get("EMBED_MODEL_ID", "amazon.titan-embed-text-v2:0")
 TOP_K = int(os.environ.get("TOP_K", "3"))
 MAX_QUESTION_CHARS = 500

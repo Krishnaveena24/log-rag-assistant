@@ -1,7 +1,7 @@
 variable "region" {
   description = "AWS region with Bedrock access"
   type        = string
-  default     = "us-east-1"
+  default     = "ap-southeast-2"
 }
 
 variable "project_name" {
@@ -13,7 +13,7 @@ variable "project_name" {
 variable "chat_model_id" {
   description = "Bedrock model (or inference profile) that writes the answer"
   type        = string
-  default     = "us.amazon.nova-lite-v1:0"
+  default     = "apac.amazon.nova-lite-v1:0"
 }
 
 variable "embed_model_id" {

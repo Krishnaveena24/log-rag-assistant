@@ -52,7 +52,7 @@ The first **Deploy** run will fail because the secrets aren't set yet. That's ex
 
 ### 2. Check Bedrock access (10 min)
 
-1. In the AWS console, switch the region (top right) to **US East (N. Virginia) us-east-1**.
+1. In the AWS console, make sure the region (top right) is **Asia Pacific (Sydney) ap-southeast-2**.
 2. Open **Amazon Bedrock > Playgrounds > Chat**, pick **Amazon Nova Lite**, and send "hello".
 3. If you see an access message, open **Model access** in the Bedrock menu and enable
    **Nova Lite** and **Titan Text Embeddings V2**.
@@ -61,7 +61,7 @@ The first **Deploy** run will fail because the secrets aren't set yet. That's ex
 
 Terraform needs somewhere to remember what it created between runs.
 
-1. Open **S3 > Create bucket** in us-east-1.
+1. Open **S3 > Create bucket** in Sydney (ap-southeast-2).
 2. Name it something unique, such as `kv-tfstate-<random numbers>`. Keep the defaults (public access blocked).
 
 ### 4. Create AWS keys for GitHub Actions (10 min)
