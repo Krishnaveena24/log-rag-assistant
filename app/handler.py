@@ -6,13 +6,20 @@ to answer using only those chunks.
 """
 import json
 import os
+import time
 
 import boto3  # already included in the AWS Lambda Python runtime
+from botocore.config import Config
+from botocore.exceptions import ClientError
 
-from rag import chunk_lines, top_k
+from rag import chunk_lines, keyword_top_k, top_k
 
 s3 = boto3.client("s3")
-bedrock = boto3.client("bedrock-runtime")
+# "adaptive" retries slow down automatically when Bedrock returns ThrottlingException.
+bedrock = boto3.client(
+    "bedrock-runtime",
+    config=Config(retries={"max_attempts": 8, "mode": "adaptive"}, read_timeout=50),
+)
 
 LOG_BUCKET = os.environ["LOG_BUCKET"]
 DEFAULT_LOG_KEY = os.environ.get("LOG_KEY", "logs/app.log")
@@ -44,14 +51,38 @@ def embed(text):
     return json.loads(response["body"].read())["embedding"]
 
 
-def load_index(key):
+def is_throttled(error):
+    return error.response.get("Error", {}).get("Code") == "ThrottlingException"
+
+
+def load_chunks(key):
     obj = s3.get_object(Bucket=LOG_BUCKET, Key=key)
-    cache_key = (key, obj["ETag"])
+    text = obj["Body"].read().decode("utf-8", errors="replace")
+    return (key, obj["ETag"]), chunk_lines(text)
+
+
+def load_index(cache_key, chunks):
+    """Embed every chunk once and cache it. Pauses between calls to stay under rate limits."""
     if cache_key not in _cache:
-        text = obj["Body"].read().decode("utf-8", errors="replace")
+        index = []
+        for chunk in chunks:
+            index.append((chunk, embed(chunk)))
+            time.sleep(0.5)
         _cache.clear()
-        _cache[cache_key] = [(chunk, embed(chunk)) for chunk in chunk_lines(text)]
+        _cache[cache_key] = index
     return _cache[cache_key]
+
+
+def retrieve(question, cache_key, chunks):
+    """Semantic search with embeddings; falls back to keyword search if Bedrock is throttling."""
+    try:
+        index = load_index(cache_key, chunks)
+        return top_k(embed(question), index, TOP_K), "embeddings"
+    except ClientError as error:
+        if not is_throttled(error):
+            raise
+        print("Embeddings throttled, using keyword retrieval instead")
+        return keyword_top_k(question, chunks, TOP_K), "keyword"
 
 
 def ask_model(question, chunks):
@@ -76,8 +107,8 @@ def lambda_handler(event, context):
     if len(question) > MAX_QUESTION_CHARS:
         return {"error": f"Question is too long (max {MAX_QUESTION_CHARS} characters)."}
 
-    index = load_index(event.get("log_key", DEFAULT_LOG_KEY))
-    chunks = top_k(embed(question), index, TOP_K)
+    cache_key, all_chunks = load_chunks(event.get("log_key", DEFAULT_LOG_KEY))
+    chunks, retrieval = retrieve(question, cache_key, all_chunks)
     answer = ask_model(question, chunks)
-    print(json.dumps({"question": question, "chunks_used": len(chunks)}))
-    return {"question": question, "answer": answer, "sources": chunks}
+    print(json.dumps({"question": question, "chunks_used": len(chunks), "retrieval": retrieval}))
+    return {"question": question, "answer": answer, "retrieval": retrieval, "sources": chunks}
