@@ -14,6 +14,7 @@ permissions:
 env:
   AWS_REGION: ap-southeast-2
   FUNCTION_NAME: log-rag-assistant
+  AWS_MAX_ATTEMPTS: 1
 
 jobs:
   ask:
@@ -31,6 +32,7 @@ jobs:
         run: |
           jq -n --arg q "$QUESTION" '{question: $q}' > payload.json
           aws lambda invoke --function-name "$FUNCTION_NAME" \
+            --cli-read-timeout 150 \
             --payload fileb://payload.json response.json > /dev/null
 
           if jq -e '.errorMessage' response.json > /dev/null; then
@@ -43,6 +45,9 @@ jobs:
             echo
             echo "## Answer"
             jq -r '.answer // .error' response.json
+            echo
+            echo "## Retrieval method"
+            jq -r '.retrieval // "unknown"' response.json
             echo
             echo "## Log excerpts used"
             jq -r '.sources[]? | "```\n" + . + "\n```"' response.json
