@@ -1,0 +1,46 @@
+2026-10-20T09:00:01Z INFO  [payments-api] pod=payments-api-7d9f8-x2k1 Service started, version=2.4.1, env=prod-pod-12
+2026-10-20T09:00:02Z INFO  [payments-api] Connected to MySQL primary db-prod-12.internal:3306, pool_size=20
+2026-10-20T09:00:03Z INFO  [order-consumer] Kafka consumer joined group=orders-cg topic=orders partitions=0-5
+2026-10-20T09:05:10Z INFO  [payments-api] GET /health 200 4ms
+2026-10-20T09:10:44Z INFO  [payments-api] POST /payments 201 87ms order_id=A-10021
+2026-10-20T09:15:02Z INFO  [order-consumer] Consumer lag=12 messages topic=orders
+2026-10-20T09:20:31Z INFO  [payments-api] POST /payments 201 92ms order_id=A-10388
+2026-10-20T09:30:00Z INFO  [scheduler] Nightly reconciliation job queue=recon-daily scheduled for 23:00 UTC
+2026-10-20T09:42:17Z INFO  [deploy] Rolling update started for payments-api to version=2.5.0 by ci-pipeline
+2026-10-20T09:43:05Z INFO  [deploy] Rolling update complete, 3/3 pods ready, version=2.5.0
+2026-10-20T09:51:40Z WARN  [payments-api] Slow query 2310ms: SELECT * FROM payment_audit WHERE created_at > ?
+2026-10-20T09:52:12Z WARN  [payments-api] Slow query 2875ms: SELECT * FROM payment_audit WHERE created_at > ?
+2026-10-20T09:53:30Z WARN  [payments-api] DB connection pool usage 18/20
+2026-10-20T09:54:02Z WARN  [payments-api] DB connection pool usage 20/20, requests waiting=14
+2026-10-20T09:54:15Z ERROR [payments-api] Timeout acquiring DB connection after 5000ms order_id=A-11042
+2026-10-20T09:54:16Z ERROR [payments-api] POST /payments 503 5012ms order_id=A-11042
+2026-10-20T09:54:20Z ERROR [payments-api] Timeout acquiring DB connection after 5000ms order_id=A-11045
+2026-10-20T09:54:21Z ERROR [payments-api] POST /payments 503 5008ms order_id=A-11045
+2026-10-20T09:54:30Z WARN  [order-consumer] Consumer lag=480 messages topic=orders, payments-api returning 503
+2026-10-20T09:55:01Z ALERT [monitoring] payments-api error rate 34% > threshold 5% (5m window) severity=critical
+2026-10-20T09:55:40Z WARN  [order-consumer] Consumer lag=1350 messages topic=orders
+2026-10-20T09:56:12Z ERROR [kubelet] pod=payments-api-7d9f8-x2k1 Liveness probe failed: GET /health timeout
+2026-10-20T09:56:45Z WARN  [kubelet] pod=payments-api-7d9f8-x2k1 Container restarted (restart_count=1)
+2026-10-20T09:57:30Z ERROR [payments-api] Timeout acquiring DB connection after 5000ms order_id=A-11102
+2026-10-20T09:58:05Z INFO  [oncall] Incident INC-4471 opened by shift engineer, investigating payments-api 503s
+2026-10-20T09:59:20Z INFO  [oncall] Restarting pods did not help, pool exhausts again within 2 minutes
+2026-10-20T10:01:10Z INFO  [oncall] Found new query in version=2.5.0: audit report runs full scan on payment_audit without index on created_at
+2026-10-20T10:03:00Z INFO  [deploy] Rollback started for payments-api to version=2.4.1 by oncall
+2026-10-20T10:04:12Z INFO  [deploy] Rollback complete, 3/3 pods ready, version=2.4.1
+2026-10-20T10:05:00Z INFO  [payments-api] DB connection pool usage 6/20
+2026-10-20T10:05:30Z INFO  [payments-api] POST /payments 201 95ms order_id=A-11180
+2026-10-20T10:07:45Z INFO  [order-consumer] Consumer lag=420 messages topic=orders, catching up
+2026-10-20T10:12:10Z INFO  [order-consumer] Consumer lag=0 messages topic=orders
+2026-10-20T10:13:00Z INFO  [monitoring] payments-api error rate 0.2% back below threshold, alert resolved
+2026-10-20T10:20:00Z INFO  [oncall] INC-4471 mitigated. Follow-up: add index on payment_audit.created_at and move audit report to read replica
+2026-10-20T11:00:00Z INFO  [payments-api] GET /health 200 3ms
+2026-10-20T13:15:22Z WARN  [ingress] TLS certificate for api.example-shop.com expires in 9 days
+2026-10-20T14:02:10Z INFO  [scheduler] Kafka job queue=invoice-export created on demand by team=finance
+2026-10-20T14:30:45Z WARN  [inventory-svc] pod=inventory-svc-55c-qq8 memory usage 92% of limit 512Mi
+2026-10-20T14:34:10Z ERROR [kubelet] pod=inventory-svc-55c-qq8 OOMKilled, container exceeded memory limit 512Mi
+2026-10-20T14:34:12Z WARN  [kubelet] pod=inventory-svc-55c-qq8 Container restarted (restart_count=1)
+2026-10-20T14:40:00Z INFO  [oncall] Raised inventory-svc memory limit to 1Gi via config update, ticket CHG-2290
+2026-10-20T14:45:00Z INFO  [inventory-svc] memory usage 41% of limit 1Gi, stable
+2026-10-20T16:00:00Z INFO  [ingress] TLS certificate for api.example-shop.com renewed, new expiry 2027-01-18
+2026-10-20T23:00:00Z INFO  [scheduler] Job queue=recon-daily started
+2026-10-20T23:18:42Z INFO  [scheduler] Job queue=recon-daily finished, 18,240 records reconciled, 0 mismatches
