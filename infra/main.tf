@@ -115,7 +115,7 @@ resource "aws_lambda_function" "assistant" {
   handler          = "handler.lambda_handler"
   filename         = data.archive_file.lambda.output_path
   source_code_hash = data.archive_file.lambda.output_base64sha256
-  timeout          = 60
+  timeout          = 120
   memory_size      = 256
 
   environment {
