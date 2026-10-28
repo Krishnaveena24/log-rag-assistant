@@ -15,10 +15,15 @@ from botocore.exceptions import ClientError
 from rag import chunk_lines, keyword_top_k, top_k
 
 s3 = boto3.client("s3")
-# "adaptive" retries slow down automatically when Bedrock returns ThrottlingException.
-bedrock = boto3.client(
+# Embeddings: give up fast when throttled, so the keyword fallback kicks in quickly.
+bedrock_embed = boto3.client(
     "bedrock-runtime",
-    config=Config(retries={"max_attempts": 8, "mode": "adaptive"}, read_timeout=50),
+    config=Config(retries={"max_attempts": 2, "mode": "standard"}, read_timeout=20),
+)
+# Answer model: be patient; "adaptive" retries slow down when Bedrock throttles.
+bedrock_chat = boto3.client(
+    "bedrock-runtime",
+    config=Config(retries={"max_attempts": 6, "mode": "adaptive"}, read_timeout=60),
 )
 
 LOG_BUCKET = os.environ["LOG_BUCKET"]
@@ -42,7 +47,7 @@ _cache = {}
 
 
 def embed(text):
-    response = bedrock.invoke_model(
+    response = bedrock_embed.invoke_model(
         modelId=EMBED_MODEL_ID,
         contentType="application/json",
         accept="application/json",
@@ -87,7 +92,7 @@ def retrieve(question, cache_key, chunks):
 
 def ask_model(question, chunks):
     context = "\n\n---\n\n".join(chunks)
-    response = bedrock.converse(
+    response = bedrock_chat.converse(
         modelId=CHAT_MODEL_ID,
         system=[{"text": SYSTEM_PROMPT}],
         messages=[{
