@@ -1,0 +1,51 @@
+name: Ask the logs
+
+on:
+  workflow_dispatch:
+    inputs:
+      question:
+        description: "Your question about the logs"
+        required: true
+        default: "Why did payments-api return 503 errors and what fixed it?"
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-2
+  FUNCTION_NAME: log-rag-assistant
+
+jobs:
+  ask:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Ask the assistant
+        env:
+          QUESTION: ${{ inputs.question }}
+        run: |
+          jq -n --arg q "$QUESTION" '{question: $q}' > payload.json
+          aws lambda invoke --function-name "$FUNCTION_NAME" \
+            --payload fileb://payload.json response.json > /dev/null
+
+          if jq -e '.errorMessage' response.json > /dev/null; then
+            echo "Lambda returned an error:"; cat response.json; exit 1
+          fi
+
+          {
+            echo "## Question"
+            echo "$QUESTION"
+            echo
+            echo "## Answer"
+            jq -r '.answer // .error' response.json
+            echo
+            echo "## Log excerpts used"
+            jq -r '.sources[]? | "```\n" + . + "\n```"' response.json
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          jq -r '.answer // .error' response.json
